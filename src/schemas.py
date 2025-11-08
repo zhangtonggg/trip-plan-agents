@@ -27,3 +27,14 @@ class TravelRequest(BaseModel):
             return v
         except ValueError:
             raise ValueError("日期格式应为YYYY-MM-DD")
+
+class UserInput(BaseModel):
+    message: str
+
+    @field_validator('message')
+    @classmethod
+    def validate_location(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("输入不能为空")
+        return v

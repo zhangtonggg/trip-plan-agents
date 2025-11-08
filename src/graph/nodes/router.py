@@ -1,13 +1,15 @@
-# src/graph/nodes/router.py
 import os
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_qwq import ChatQwen
-from langchain_core.messages import AIMessage, BaseMessage # 导入HumanMessage for type hints
-from typing import Dict, Any, List
+from typing import Dict, Any
 from dotenv import load_dotenv
+from langchain_qwq import ChatQwen
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import AIMessage
+from ...logger import get_logger
 
 from ..state import GraphState
 from ..tools import ALL_TOOLS 
+
+logger = get_logger(service=__name__)
 
 load_dotenv()
 
@@ -35,38 +37,36 @@ def router_node(state: GraphState) -> Dict[str, Any]:
     prompt = ChatPromptTemplate.from_messages([
         ("system", """你是一个智能决策助手，负责分析用户的请求和对话历史，决定是否需要调用外部工具来获取信息。
             
-            如果需要工具，请调用合适的工具，并提供所有必要的参数。
-            如果不需要工具，或者你认为可以根据当前信息直接回答，则直接回复用户。
-            
-            请记住：
-            - 在每次决策时，考虑对话的最新进展和用户意图。
-            - 如果需要工具，你将以工具调用的形式输出。
-            - 如果不需要工具，你将以自然语言文本的形式输出。
-            - 你的主要目标是有效地满足用户的旅游计划需求。
-            """),
+                    如果需要工具，请调用合适的工具，并提供所有必要的参数。
+                    如果不需要工具，或者你认为可以根据当前信息直接回答，则直接回复用户。
+                    
+                    请记住：
+                    - 在每次决策时，考虑对话的最新进展和用户意图。
+                    - 如果需要工具，你将以工具调用的形式输出。
+                    - 如果不需要工具，你将以自然语言文本的形式输出。
+                    - 你的主要目标是有效地满足用户的旅游计划需求。
+                    """
+        ),
         MessagesPlaceholder(variable_name="messages")
     ])
-
     chain = prompt | chat_with_tools
-    
-    print(f"router_node: Input messages to LLM: {messages}")
+    logger.info(f"router_node: Input messages to LLM: {messages}")
 
     try:
-        response: AIMessage = chain.invoke({"messages": messages})
-        print(f"router_node: LLM response: {response}")
-
+        response = chain.invoke({"messages": messages})
+        logger.info(f"router_node: LLM response: {response}")
+        
         new_messages = messages + [response]
         state_updates["messages"] = new_messages
 
         if response.tool_calls:
-            # 修正这里：直接从 tool_call 字典中获取 'name'
             tool_call = response.tool_calls[0] # 假设只调用第一个工具
             tool_name = tool_call.get("name") # 直接获取 'name' 键
             
             if tool_name:
                 state_updates["next_node"] = tool_name
             else:
-                print(f"Warning: LLM returned tool_calls but the first tool_call has no 'name' key: {tool_call}")
+                logger.info(f"Warning: LLM returned tool_calls but the first tool_call has no 'name' key: {tool_call}")
                 state_updates["next_node"] = "summarizer" 
         else:
             state_updates["next_node"] = "summarizer"

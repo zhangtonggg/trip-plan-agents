@@ -1,6 +1,7 @@
 from langchain_core.messages import BaseMessage
 from typing import List, Optional, TypedDict, Dict, Any
 
+
 class GraphState(TypedDict, total=False):
     messages: List[BaseMessage]
     current_plan: Optional[str]  
@@ -8,6 +9,7 @@ class GraphState(TypedDict, total=False):
     max_iterations: int
     next_node: Optional[str]
     tool_results: Dict[str, Any]
+
 
 def initialize_graph_state() -> GraphState:
     return GraphState(
