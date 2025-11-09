@@ -1,16 +1,19 @@
 import re
 from fastapi import FastAPI
 from langchain_core.messages import HumanMessage
-from .graph.state import initialize_graph_state, GraphState
 from datetime import datetime
+from fastapi import APIRouter
 
-from .schemas import TravelRequest, UserInput
-from .logger import get_logger
-from .graph.graph import build_graph
+from ..graph.graph import build_graph
+from ..graph.state import initialize_graph_state, GraphState
+from ..schemas import TravelRequest, UserInput
+from ..logger import get_logger
+
+
+app = APIRouter()
 
 logger = get_logger(service=__name__)
 
-app = FastAPI()
 
 user_sessions = {}
 def get_session(session_id: str):
