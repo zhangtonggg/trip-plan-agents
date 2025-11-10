@@ -33,5 +33,5 @@ source .venv/bin/activate
 uv pip install -r requirements.txt
 
 # Start the application
-python -m src.agent
+python -m src.app
 ```
